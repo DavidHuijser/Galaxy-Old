@@ -30,17 +30,19 @@ class Data
 		// Sigma map
 		std::vector< std::vector<double> > sig;
 
+		// PSF 
+		std::vector< std::vector<double> > psf_image;
+
                 double max_mag;
                 double min_mag; 
                 double magzp;
    
-
-		void compute_ray_grid();
+//		void compute_ray_grid();
 
 	public:
 		Data();
 		void load(const char* metadata_file, const char* image_file,
-				const char* sigma_file);
+				const char* sigma_file, const char* psf_file);
 
 		// Getters
 		int get_ni() const { return ni; }
@@ -59,6 +61,9 @@ class Data
 			{ return image; }
 		const std::vector< std::vector<double> >& get_sigma() const
 			{ return sig; }
+		const std::vector< std::vector<double> >& get_psf() const
+			{ return psf_image; }
+
             	int get_magzp() const { return magzp; }
 
 	// Singleton

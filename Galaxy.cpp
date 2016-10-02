@@ -1,12 +1,12 @@
 #include "Galaxy.h"
 #include "DNest4/code/DNest4.h"
 #include "Data.h"
+#include "DH_Util.h"
 #include <string> 
 
 #include <sstream>
 #include <fstream>                 // includes
 #include <iostream>
-
 
 
 #define ARMA_DONT_USE_CXX11 
@@ -26,6 +26,9 @@
 
 // use:   more sample_info.txt 
 
+#include <mutex>          // std::mutex
+
+
 
 using namespace std;
 using namespace DNest4;
@@ -36,11 +39,29 @@ Galaxy::Galaxy()
 {
     set_limit();
     global_index = 0;
-    load_psf();
     calculate_fft(Data::get_instance().get_ni(), Data::get_instance().get_nj());
 
     
 }
+
+
+//double Galaxy::draw_tdistribution(double gamma, double location, double shape)
+//{         
+//      double a = rng.randn();        // rng.rand(); uniform 
+//      double b = rng.rand();         // rng.randn(); gaussian
+//      x =   a / sqrt(-ln(b));   
+//      x = shape*x + location;
+//      return x;
+//}
+
+
+//double Galaxy::prob_tdistribution(double x, double gamma, double location, double shape)
+//{
+//  double p = (p-location)/shape;
+
+//}
+//      		
+
 
 void Galaxy::set_limit()
 { 
@@ -93,6 +114,9 @@ void Galaxy::set_limit()
 
 
 
+
+
+
 void Galaxy::from_prior(RNG& rng)
 {
     //    std::cout << std::endl << " Started drawing from prior " << std::endl;
@@ -101,47 +125,44 @@ void Galaxy::from_prior(RNG& rng)
       // and so on...
 
       for(size_t i=0; i<params.size()-1; ++i)
-          params[i] = lower_limit[i] + (upper_limit[i] - lower_limit[i])*rng.rand();
-
-//      params[0] = DH_drandom(x_min, x_max);     
-//      params[1] = DH_drandom(y_min, y_max);
-//      // bulge 
-//      params[2] = DH_drandom(fluxlim_min, fluxlim_max);    
-//      params[3] = DH_drandom(radiuslim_min, radiuslim_max);    
-//      params[4] = DH_drandom(0.5, 10);
-//      params[5] = DH_drandom(q_min, q_max);        
-//      params[6] = DH_drandom(theta_min, theta_max);        
-//      params[7] = DH_drandom(c_min, c_max);        
-////      // disc
-//      params[8] = DH_drandom(fluxlim_min, fluxlim_max);    
-//      params[9] = DH_drandom(radiuslim_min, radiuslim_max);    
-
-//      params[10] = DH_drandom(q_min, q_max);
-//      params[11] = DH_drandom(theta_min, theta_max); 
-//      params[12] = DH_drandom(c_min, c_max);
-//      // bar
-//      params[13] = DH_drandom(fluxlim_min, fluxlim_max);     
-//      params[14] = DH_drandom(radiuslim_min, radiuslim_max);    
-//      params[15] = DH_drandom(0,1);
-//      params[16] = DH_drandom(0.,1);
-//      params[17] = DH_drandom(q_min, q_max);
-//      params[18] = DH_drandom(theta_min, theta_max);
-//      params[19] = DH_drandom(c_min, c_max);
-     //   std::cout << " Finished drawing from prior, starting image " << std::endl; 
+      {
+       if ((i == 2) && (i == 8))
+       {
+               params[i] = 5*rt(2) + 25;   // shape=2, location=25, scale=5
+        }
+        else
+        {
+              params[i] = lower_limit[i] + (upper_limit[i] - lower_limit[i])*rng.rand();
+        }
+       } 
 	calculate_image();
    //     std::cout << " Finished image " << std::endl; 
 }
 
 
-
 double Galaxy::perturb(RNG& rng)
-{
+{      
 	int which = rng.rand_int(params.size());
-	params[which] += (upper_limit[which] - lower_limit[which])*rng.randh();
-	wrap(params[which], lower_limit[which], upper_limit[which]);                   // wraps?
-	calculate_image(); 
-	return 0.0;
+        double log_H = 0.0;
+        if ((which == 2) && (which == 8))
+        {
+
+    //           mtx.lock();
+                log_H -= dt((params[which]-25)/5, 2,0);
+                params[which] = 5*rt(2)+25;                    // shape=2, location=25, scale=5          
+                log_H += dt((params[which]-25)/5, 2,0);
+            //   mtx.unlock();
+         }
+         else
+         {
+         	params[which] += (upper_limit[which] - lower_limit[which])*rng.randh();
+	        wrap(params[which], lower_limit[which], upper_limit[which]);                   // wraps?
+        }
+	calculate_image();
+ 	return log_H;
+
 }
+
 
 
 double Galaxy::log_likelihood() const
@@ -149,7 +170,6 @@ double Galaxy::log_likelihood() const
   //      std::cout << std::endl << " Started eval loglikelihood " << std::endl;   
 	const vector< vector<double> >& data = Data::get_instance().get_image();
 	const vector< vector<double> >& sig =  Data::get_instance().get_sigma();
-
 
 	double logL = 0.;
 	double var;
@@ -195,6 +215,9 @@ void Galaxy::print(std::ostream& out) const
 
 void Galaxy::calculate_image()
 {
+
+       // static std::mutex mtx2;           // mutex for critical section
+      //  mtx2.lock();
      //   std::cout << std::endl << " Started making image " << std::endl;    
         global_index++;
 	// Get coordinate stuff from data
@@ -251,14 +274,6 @@ void Galaxy::calculate_image()
 //// finally:
 //model->evaluate();
 
-
-
-
-
-
-
-
-
      profit::Model *model = new profit::Model();
      profit::Profile *sersic_profile = model->add_profile("sersic");
 
@@ -292,7 +307,7 @@ void Galaxy::calculate_image()
      double x, y;
      double half_xbin = model->scale_x/2.;
      double half_ybin = model->scale_y/2.;
-     std::cout << "rout= " << params[9]*params[3] << " a= " << params[10] << " b= " << params[11] << std::endl;
+    // std::cout << "rout= " << params[9]*params[3] << " a= " << params[10] << " b= " << params[11] << std::endl;
 
      model->evaluate();
 
@@ -347,27 +362,32 @@ void Galaxy::calculate_image()
 //      } //end-for
 //      delete bulge;
         blur_image2(image);
-       
-        if (global_index % 500 == 0)
+   //     mtx2.unlock();
+  
+       if (global_index % 500 == 0)
         {
-
-
              writefile(image); 
         }
    //   std::cout << std::endl << " Ended making image " << std::endl;    
+
+//        mtx.unlock(); 
+
 }
+
 
 
 
 void Galaxy::writefile(const std::vector< std::vector<long double> >  &image)
 {
 
-    int sub2 = int(global_index / 500); 
-    std::stringstream result;
-    result << sub2;
+     int sub2 = int(global_index / 500); 
+ //   std::stringstream result;
+  //  result << sub2;
 
-     std:string sub = result.str();
-     std::string name="file_" + sub  +".txt";        
+//     std::string sub = result.str();
+//      std::string name="file_" + sub  +".txt";        
+
+      std::string name="file_" +      std::to_string(sub2)  +".txt";        
       std::ofstream myout; // This is the object that sends data to the file. It is used like cout, but now writes in file. 
       myout.open(name.c_str());  // ofstream means Output File Stream.
     //  std::cout << "This is an " << image.size()  << " by " << image[0].size() << " image" << std::endl;
@@ -384,41 +404,13 @@ myout.close();
 }
 
 
-void Galaxy::load_psf()
-{
-    std::auto_ptr<FITS> pInfile(new FITS("Data/psfim.fits",Read,true));
-    PHDU& image=pInfile->pHDU(); 
-    std::valarray<double>  contents;      
-    std::vector<String> name;
-//     name.push_back("EXPTIME");
-//     name.push_back("MAGZP");
 
-     // read all user-specifed, coordinate, and checksum keys in the image
-     image.readAllKeys();
-     image.read(contents);
 
-     // this doesn't print the data, just header info.
-     std::cout << image << std::endl;
-
-     // create an vector of vectors
-     int N = image.axis(0);
-     int M = image.axis(1);
-
-//     std::vector< std::vector<double> > pixels(N, std::vector<double>(M));   // Create a 2D array of size N x M  
-      psf_image.assign(N, std::vector<long double>(M,0.00));   // Create a 2D array of size N x M
-      int counter =0; 
-      for (long j = 0;j< M ; j++)
-      {
-           for (long i = 0;i < N ; i++)
-           {                
-                 psf_image[i][j] = double(contents[counter]);                         // pixels (x,y)
-                 counter++;
-            }
-      }
-}
 
 void Galaxy::calculate_fft(int Ni, int Nj)
 {
+   const vector< vector<double> >& psf_image =  Data::get_instance().get_psf();
+
 // Make the psf the same size as the image
 mat psf(Ni, Nj);
 psf.zeros();
@@ -443,6 +435,7 @@ fft_ready = true;
 
 void Galaxy::blur_image2(std::vector< std::vector<long double> >  &img) 
 {
+ 
 if(!fft_ready)
 cerr<<"# Blurring failed."<<endl;
 
@@ -467,7 +460,6 @@ B = ifft2(B);
 for(size_t i=0; i<img.size(); i++)
 for(size_t j=0; j<img[0].size(); j++)
 img[i][j] = real(B(i, j));
-
 }
 
 

@@ -88,8 +88,8 @@ pro test_DNest4
 ;   ; recreate image
 ;   
 ;    
-   start = 653
-   sample_size = 1154
+   start = 1
+   sample_size = 6
    
    for index = start, sample_size-1 do begin
    

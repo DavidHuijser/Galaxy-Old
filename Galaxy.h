@@ -2,6 +2,7 @@
 #define DNest4_Galaxy
 
 #include "DNest4/code/DNest4.h"
+#include "DH_Util.h"
 #include <valarray>
 #include <ostream>
 #include <string> 
@@ -15,6 +16,7 @@
 
 
 using namespace std;
+// static class Galaxy
 class Galaxy
 {
 	private:
@@ -26,7 +28,8 @@ class Galaxy
 		void calculate_image();
          	double sigma;
                 double magzp;
-        
+
+                void writefile(const std::vector< std::vector<long double> >  &image);
 
                 // FFT of the PSF
                 arma::cx_mat fft_of_psf;
@@ -59,14 +62,16 @@ class Galaxy
                 std::vector<double> upper_limit;
                 std::vector<double> lower_limit;
  
-                void writefile(const std::vector< std::vector<long double> >  &image);
- 
 	        std::string IntToStr(int n);
            
                 // PSF
-                void load_psf();
+//                void load_psf();
                 void calculate_fft(int Ni, int Nj);
                 void blur_image2(std::vector< std::vector<long double> >  &img);
+
+        //       double draw_tdistribution(double gamma, double location, double shape);
+         //       double prob_tdistribution(double x, double gamma, double location, double shape);      		
+          
 
 };
 

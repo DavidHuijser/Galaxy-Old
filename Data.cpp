@@ -18,7 +18,7 @@ Data::Data()
 }
 
 
-void Data::load(const char* metadata_file, const char* image_file, const char* sigma_file )
+void Data::load(const char* metadata_file, const char* image_file, const char* sigma_file , const char* psf_file)
 {
 
      std::auto_ptr<FITS> pInfile(new FITS(image_file,Read,true));
@@ -49,7 +49,6 @@ void Data::load(const char* metadata_file, const char* image_file, const char* s
       y_max = nj;
       x_max = ni;
      
-    
       int counter =0; 
       image.assign(ni, vector<double>(nj));
       for (long j = 0;j< nj ; j++)
@@ -86,13 +85,11 @@ void Data::load(const char* metadata_file, const char* image_file, const char* s
 	if(abs(log(dx/dy)) >= 1E-3)
 		cerr<<"# ERROR: pixels aren't square."<<endl;
 
-	compute_ray_grid();
+	//compute_ray_grid();
 
 
 
-
-
-     std::auto_ptr<FITS> pInfile2(new FITS(sigma_file,Read,true));
+     std::unique_ptr<FITS> pInfile2(new FITS(sigma_file,Read,true));
      PHDU& sigma_=pInfile2->pHDU(); 
 
      std::valarray<double>  contents_sigma;      
@@ -125,25 +122,58 @@ void Data::load(const char* metadata_file, const char* image_file, const char* s
                  counter++;
             }
      }
+    std::cout << "Finished imaged starting on psf" << std::endl;
+
+    std::unique_ptr<FITS> pInfile3(new FITS(psf_file,Read,true));
+    PHDU& psf_=pInfile3->pHDU(); 
+    std::valarray<double> contents_psf;      
+    std::vector<String> name_psf;
+//     name.push_back("EXPTIME");
+//     name.push_back("MAGZP");
+
+     // read all user-specifed, coordinate, and checksum keys in the image
+     psf_.readAllKeys();
+     psf_.read(contents_psf);
+
+     // this doesn't print the data, just header info.
+     std::cout << psf_ << std::endl;
+
+     // create an vector of vectors
+     int N = psf_.axis(0);
+     int M = psf_.axis(1);
+
+//     std::vector< std::vector<double> > pixels(N, std::vector<double>(M));   // Create a 2D array of size N x M  
+//      psf_image.assign(N, std::vector<double>(M,0.00));   // Create a 2D array of size N x M
+      psf_image.assign(N, vector<double>(M));
+      counter =0; 
+      for (int j = 0;j< M; j++)
+      {
+           for (int i = 0;i < N ; i++)
+           {                
+                 psf_image[i][j] = double(contents_psf[counter]);                         // pixels (x,y)
+                 counter++;
+            }
+      }
+
 	
 }
 
-void Data::compute_ray_grid()
-{
-	// Make vectors of the correct size
-	x_rays.assign(ni, vector<double>(nj));
-	y_rays.assign(ni, vector<double>(nj));
+//void Data::compute_ray_grid()
+//{
+//	// Make vectors of the correct size
+//	x_rays.assign(ni, vector<double>(nj));
+//	y_rays.assign(ni, vector<double>(nj));
 
-	// Distance between adjacent rays
-	double L = dx;
+//	// Distance between adjacent rays
+//	double L = dx;
 
-	for(size_t i=0; i<x_rays.size(); i++)
-	{
-		for(size_t j=0; j<x_rays[i].size(); j++)
-		{
-			x_rays[i][j] = x_min + (j + 0.5)*L;
-			y_rays[i][j] = y_max - (i + 0.5)*L;
-		}
-	}
-}
+//	for(size_t i=0; i<x_rays.size(); i++)
+//	{
+//		for(size_t j=0; j<x_rays[i].size(); j++)
+//		{
+//			x_rays[i][j] = x_min + (j + 0.5)*L;
+//			y_rays[i][j] = y_max - (i + 0.5)*L;
+//		}
+//	}
+//}
 
