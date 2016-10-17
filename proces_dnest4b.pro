@@ -1,33 +1,39 @@
 pro proces_DNest4b
 
-cd ,'/home/dhui890/Documents/Research/Brendon/DNest4/code/Examples/SingleGalaxy/'
-dir = '/home/dhui890/Documents/Research/Brendon/DNest4/code/Examples/SingleGalaxy'
+
+cd ,'/home/dhui890/Documents/Research/Brendon/DNest4/code/Examples/SingleGalaxy/TwoComponentRun_First/'
+dir = '/home/dhui890/Documents/Research/Brendon/DNest4/code/Examples/SingleGalaxy/TwoComponentRun_First'
+
+
+;cd ,'/home/dhui890/Documents/Research/Brendon/DNest4/code/Examples/SingleGalaxy/'
+;dir = '/home/dhui890/Documents/Research/Brendon/DNest4/code/Examples/SingleGalaxy'
 
 ;
 info_filename = dir + '/'   + 'posterior_sample.txt'
 temp_sample = READ_ASCII(info_filename)
 posterior_sample = temp_sample.field00001
 
-n = 14    ; number of parameters 
-total_sample =posterior_sample[0:14,*]  
+n = 14                                        ; total number of parameters 
+total_sample =posterior_sample[0:14,*]        ; only store parameter info throw away the image info
 
-titles = ['x','y','mag','re','nser', 'axrat','ang','box','mag-bar', 'rout','a','b','q-bar','ang-bar','box-bar']
-
-
-nil = calc_stats(total_sample, titles)
-
-
-index = [2,3,4,5,6]
-
-;# obtain subset without images     [0xcen, 1ycen, 2mag, 3re, 4nser, 5axrat, 6ang, 7box, mag8, rout9,a10, b11, axrat12, ang13, box14] 
+; array with all the parameter names
+; obtain subset without images     [0xcen, 1ycen, 2mag, 3re, 4nser, 5axrat, 6ang, 7box, mag8, rout9,a10, b11, axrat12, ang13, box14]
 titels = ['x','y','mag','re','nser', 'axrat','ang','box','mag-bar', 'rout','a','b','q-bar','ang-bar','box-bar']
-;range=[[0,100],[0,100],[0,40], [0,100],[0,10],[0,1],[0,180],[-1,1],[0,40],[0,1],[0,40],[0,40],[0,1],[0,180], [-1,1] ] 
-range=[[0,100],[0,100],[15,20], [10,25],[4,8],[0,1],[0,180],[-1,1],[15,20],[0.4,1.2],[-2,9],[-2,3],[0,1],[0,180], [-1,1] ]
+; array with the ranges / intervals
+; range=[[0,100],[0,100],[15,20], [10,25],[4,8],[0,1],[0,180],[-1,1],[15,20],[0.4,1.2],[-2,9],[-2,3],[0,1],[0,180], [-1,1] ]
 range=[[0,100],[0,100],[17.,19.], [15.,19],[5.,8],[0.1,0.5],[0,90],[-1,1],[17.,19.],[0.4,1.2],[-2,9],[-2,3],[0,1],[0,180], [-1,1] ]
 
+
+;nil = calc_stats(total_sample, titels)        ; calculate the 65% credible intervals 
+
+
+; create a subset to visualize
+index = [2,3,4,5,6]  
 sub_sample = posterior_sample[index,*]
-sub_titles = titles[index]
+sub_titles = titels[index]
 subrange= range[*,index]
+
+
 ; Set up the display window.
 ;cgDisplay, 9*n, 6*n
 ;!P.Multi = [0, n+1, n+1]
@@ -56,21 +62,57 @@ z =n
 pos = cgLayout([z,z], OXMargin=[4, 3], OYMargin=[4, 3], XGap=4, YGap=4)
 
 FOR j=0,z-1  DO BEGIN
-  for i= 0L, j do begin
-    if (i eq  j ) then begin
-      cghistoplot, sub_sample[i,*], NoErase=j NE 0, Position=pos[*,i+z*j],xtitle=sub_titles[i],Title=None, charsize =1, xrange=[subrange[0,i],subrange[1,i]], xticks=3
-    endif else begin
-      cgplot, sub_sample[i,*], sub_sample[j,*], NoErase=j NE 0, Position=pos[*,i+z*j],xtitle=sub_titles[i],ytitle=sub_titles[j],psym=2, charsize =1,  xrange=[subrange[0,i],subrange[1,i]],yrange=[subrange[0,j],subrange[1,j]] , xticks=3
-    endelse
+   for i= 0L, j do begin
+    
+    
+     ; HISTOGRAMS ON THE DIAGONAL                       
+     if (i eq  j ) then begin           
+       ;cghistoplot, sub_sample[i,*], NoErase=j NE 0, Position=pos[*,i+z*j],xtitle=sub_titles[i],Title=None, charsize =1, xrange=[subrange[0,i],subrange[1,i]], xticks=3
+        if (i eq z-1) then begin
+        cghistoplot, sub_sample[i,*], NoErase=j NE 0, Position=pos[*,i+z*j],xtitle=sub_titles[i],Title=None, charsize =1, $
+                     xrange=[subrange[0,i],subrange[1,i]], xticks=3, ytitle=None, YTICKFORMAT="(A1)"       
+        endif else begin
+            if (i eq 0) then begin
+                   cghistoplot, sub_sample[i,*], NoErase=j NE 0, Position=pos[*,i+z*j], charsize =1, $
+                   xrange=[subrange[0,i],subrange[1,i]], xticks=3, ytitle=sub_titles[j],xtitle=None,Title=None, XTICKFORMAT="(A1)"
+                                           
+            endif else begin
+                    cghistoplot, sub_sample[i,*], NoErase=j NE 0, Position=pos[*,i+z*j], charsize =1, $
+                    xrange=[subrange[0,i],subrange[1,i]], xticks=3, xtitle=None,Title=None, ytitle=None, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)"
+
+            endelse
+       endelse                                 
+     ;                                                                        
+     endif else begin             
+      ; (bottom row  j = z-1)          
+        if (j eq z-1) and (i ne 0) then begin 
+             cgplot, sub_sample[i,*], sub_sample[j,*], NoErase=j NE 0, Position=pos[*,i+z*j],xtitle=sub_titles[i],ytitle=None,psym=3, charsize =1, $
+                    xrange=[subrange[0,i],subrange[1,i]],yrange=[subrange[0,j],subrange[1,j]] , xticks=3, YTICKFORMAT="(A1)"
+        endif else begin
+             ; (lower left corner:  i = 0 & j = z-1) 
+             if (i eq 0) and (j eq z-1) then begin 
+                       cgplot, sub_sample[i,*], sub_sample[j,*], NoErase=j NE 0, Position=pos[*,i+z*j],xtitle=sub_titles[i],ytitle=sub_titles[j], $
+                               psym=3, charsize =1,  xrange=[subrange[0,i],subrange[1,i]],yrange=[subrange[0,j],subrange[1,j]] , xticks=3
+             endif else begin              
+                 if (i eq 0) and (j ne z-1) then begin
+                         cgplot, sub_sample[i,*], sub_sample[j,*], NoErase=j NE 0, Position=pos[*,i+z*j],xtitle=None,ytitle=sub_titles[j], $
+                     psym=3, charsize =1,  xrange=[subrange[0,i],subrange[1,i]],yrange=[subrange[0,j],subrange[1,j]] , xticks=3, XTICKFORMAT="(A1)"
+
+                 endif else begin
+                     cgplot, sub_sample[i,*], sub_sample[j,*], NoErase=j NE 0, Position=pos[*,i+z*j],xtitle=None,ytitle=None,psym=3, charsize =1,  $
+                      xrange=[subrange[0,i],subrange[1,i]],yrange=[subrange[0,j],subrange[1,j]] , xticks=3, XTICKFORMAT="(A1)",YTICKFORMAT="(A1)"
+
+                 endelse 
+             endelse        
+       endelse
+     endelse  
   endfor
 ENDFOR
 
 
 
 ; Clear the multiple plot variable.
-!P.Multi = 0
-  
-   
+!P.Multi = 0    
 ;plot, output_data[*,0]
 cgPS_Close
 
@@ -80,6 +122,8 @@ image_name = strcompress(dir + '/' + 'triangle_disc_IDL'  + '.png' , /remove_all
 STRING =  'convert '+ image_name +' -rotate -90 ' + image_name
 spawn, strinG
 
+
+stop 
 
 angle = 90
 

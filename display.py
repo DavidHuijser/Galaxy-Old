@@ -83,78 +83,7 @@ print ("Lenth: ", posterior_sample.shape[1])
 print ("Starting Position: ", posterior_sample.shape[1] - xsize*ysize)
 starting = posterior_sample.shape[1] - xsize*ysize
 
-print('This is Davids add part to process the data')
-# obtain subset without images     [0xcen, 1ycen, 2mag, 3re, 4nser, 5axrat, 6ang, 7box, mag8, rout9,a10, b11, axrat12, ang13, box14] 
 
-#index = [2,3,4,5,6]
-#index = [2,3,4,5,6,8,9,10,11,12,13]
-subset = posterior_sample[:, 0:starting]
- #labels=["$m$", "$b$", "$\ln\,f$"],
-  #                    truths=[m_true, b_true, np.log(f_true)])
-
-# make triangle of disc
-#fig = corner.corner(subset,labels=["$mag$", "$re$", "$n$","$q$","$\theta$"],truths=[18.07, 3.85, 0.16, 0.26, 14.9])          ,truths=[18.07,None,None, 0.26,14.9]
-#fig = corner.corner(subset,labels=["$mag$", "$re$", "$n$","$q$","$\theta$"])
-#truths  = [m,   re ,n, e , theta, f 
-#truths1 = [18.07, 3.85, 0.16, 0.26, 14.9, 0.43 ]
-#truths2 = [17.07, 2.38, 2.24, 0.65, -45.5, 0.57, 17.15] 
-
-
-
-#subset = subset[:, index]
-print('Shape:', subset.shape)
-
-#disc
-print('Make temporary cornerplot for the disc:')
-index = [2,3,4,5,6]
-labelz = ["$mag$", "$re$", "$n$","$q$","$\theta$"]
-fig = corner.corner(subset[:,index],labels=labelz,quantiles=None,plot_contours=False)
-fig.savefig("disc_triangle.png")
-close(fig)
-
-
-print('Make temporary cornerplot for the bar')
-index = [8,9,10,11,12,13]
-labelz = ["$mag$", "$Rout$", "$a$","$b$","q","$\theta$"]
-fig = corner.corner(subset[:,index],labels=labelz,quantiles=None,plot_contours=False)
-fig.savefig("bar_triangle.png")
-
-
-print('Make high-quality cornerplot for the disc:')
-index = [2,3,4,5,6]
-labelz = ["$mag$", "$re$", "$n$","$q$","$\theta$"]
-fig = corner.corner(subset[:,index],labels=["$mag$", "$re$", "$n$","$q$","$\theta$"],range=[(17.5,18.5), (15.,19), (5.,8),(0.1,0.5),(30.,60)], 
-                       quantiles=[0.68, 0.95],
-                       show_titles=True, title_kwargs={"fontsize": 12})
-fig.gca().annotate("disc corner plot",
-                       xy=(1.0, 1.0), xycoords="figure fraction",
-                       xytext=(-20, -10), textcoords="offset points",
-                       ha="right", va="top")
-fig.savefig("disc_triangle2.png", dpi=300)
-plt.close(fig)
-
-
-
-
-#bar
-print('Make high-quality cornerplot for the bar:')
-index = [8,9,10,11,12,13]
-labelz = ["$mag$", "$Rout$", "$a$","$b$","q","$\theta$"]
-fig = corner.corner(subset[:,index],labels=labelz,range=[(18.2,18.9), (0.85,1.1), (0.10,0.85),(-0.1,2.0),(0.3,1.0),(45,180)], 
-                       quantiles=[0.68, 0.95],
-                       show_titles=True, title_kwargs={"fontsize": 12})
-fig.gca().annotate("disc corner plot",
-                       xy=(1.0, 1.0), xycoords="figure fraction",
-                       xytext=(-20, -10), textcoords="offset points",
-                       ha="right", va="top")
-fig.savefig("bar_triangle2.png", dpi=300)
-plt.close(fig)
-
-
-
-
-
-stop
 for i in range(0, posterior_sample.shape[0]):
 
 
@@ -194,6 +123,44 @@ for i in range(0, posterior_sample.shape[0]):
 
 ioff()
 show()
+
+print('This is Davids add part to process the data')
+# obtain subset without images     [0xcen, 1ycen, 2mag, 3re, 4nser, 5axrat, 6ang, 7box, mag8, rout9,a10, b11, axrat12, ang13, box14] 
+
+#index = [2,3,4,5,6]
+#index = [2,3,4,5,6,8,9,10,11,12,13]
+subset = posterior_sample[:, 0:starting]
+ #labels=["$m$", "$b$", "$\ln\,f$"],
+  #                    truths=[m_true, b_true, np.log(f_true)])
+
+# make triangle of disc
+#fig = corner.corner(subset,labels=["$mag$", "$re$", "$n$","$q$","$\theta$"],truths=[18.07, 3.85, 0.16, 0.26, 14.9])          ,truths=[18.07,None,None, 0.26,14.9]
+#fig = corner.corner(subset,labels=["$mag$", "$re$", "$n$","$q$","$\theta$"])
+#truths  = [m,   re ,n, e , theta, f 
+#truths1 = [18.07, 3.85, 0.16, 0.26, 14.9, 0.43 ]
+#truths2 = [17.07, 2.38, 2.24, 0.65, -45.5, 0.57, 17.15] 
+
+
+
+#subset = subset[:, index]
+print('Shape:', subset.shape)
+
+#disc
+print('Make temporary cornerplot for the disc:')
+index = [2,3,4,5,6]
+labelz = ["$mag$", "$re$", "$n$","$q$","$\theta$"]
+fig = corner.corner(subset[:,index],labels=labelz,quantiles=None,plot_contours=False)
+fig.savefig("disc_triangle.png")
+close(fig)
+
+
+print('Make temporary cornerplot for the bar')
+index = [8,9,10,11,12,13]
+labelz = ["$mag$", "$Rout$", "$a$","$b$","q","$\theta$"]
+fig = corner.corner(subset[:,index],labels=labelz,quantiles=None,plot_contours=False)
+fig.savefig("bar_triangle.png")
+
+
 
 
 

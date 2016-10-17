@@ -11,6 +11,7 @@ pro test_DNest4
   info_filename = dir + '/'   + 'fitim.fits'
   
   fits_image = readfits(info_filename)
+  fits_image = transpose(fits_image)
   
   
   info_filename = dir + '/'   + 'psfim.fits'
@@ -89,7 +90,7 @@ pro test_DNest4
 ;   
 ;    
    start = 1
-   sample_size = 6
+   sample_size = 234
    
    for index = start, sample_size-1 do begin
    

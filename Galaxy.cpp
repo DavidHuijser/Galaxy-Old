@@ -92,6 +92,9 @@ void Galaxy::set_limit()
     lower_limit[14] = -1.0;  // boxi
 
 
+// here A rat is  the  minor  to  major  axis  ratio  (so  always  a number between 0 and 1, where 0 is an infinitely thin line and 1 is a circle or dis
+
+
     upper_limit[0] = 100; //x
     upper_limit[1] = 100; //y
     upper_limit[2] = Data::get_instance().get_magzp(); // I
@@ -109,7 +112,6 @@ void Galaxy::set_limit()
     upper_limit[13] = 180 ;  // theta  
     upper_limit[14] = 1.0;  // boxi
 
-
 }
 
 
@@ -124,9 +126,9 @@ void Galaxy::from_prior(RNG& rng)
 //      params[0] = x_min + (x_max - x_min)*rng.rand();
       // and so on...
 
-      for(size_t i=0; i<params.size()-1; ++i)
+      for(size_t i=0; i<params.size(); ++i)
       {
-       if ((i == 2) && (i == 8))
+       if ((i == 2) || (i == 8))
        {
                params[i] = 5*rt(2) + 25;   // shape=2, location=25, scale=5
         }
@@ -144,17 +146,16 @@ double Galaxy::perturb(RNG& rng)
 {      
 	int which = rng.rand_int(params.size());
         double log_H = 0.0;
-        if ((which == 2) && (which == 8))
+        if ((which == 2) || (which == 8))
         {
-
-    //           mtx.lock();
                 log_H -= dt((params[which]-25)/5, 2,0);
-                params[which] = 5*rt(2)+25;                    // shape=2, location=25, scale=5          
+         	params[which] += 5*rng.randh();
                 log_H += dt((params[which]-25)/5, 2,0);
-            //   mtx.unlock();
+
          }
          else
          {
+
          	params[which] += (upper_limit[which] - lower_limit[which])*rng.randh();
 	        wrap(params[which], lower_limit[which], upper_limit[which]);                   // wraps?
         }
@@ -189,6 +190,7 @@ double Galaxy::log_likelihood() const
         //std::cout << std::endl << " Finished eval loglikelihood sigma:" <<  var << std::endl;    
         //std::cout << data.size() << " " << data[0].size() << std::endl;    
 	return logL;
+
 }
 
 
@@ -300,7 +302,7 @@ void Galaxy::calculate_image()
      fp->rout = params[9]*params[3];
      fp->a = params[10];
      fp->b = params[11];
-     fp->axrat = params[12];
+     fp->axrat = params[12]*params[5];  // ax_bar < ax_disc
      fp->ang = params[13];
      fp->box = params[14];
 
